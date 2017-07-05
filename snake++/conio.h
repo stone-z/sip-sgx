@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 
+#define VERSION "1.0.1"
+
 /* Attributes */
 #define RESETATTR    0
 #define BRIGHT       1

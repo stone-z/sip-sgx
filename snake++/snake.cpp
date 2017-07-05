@@ -22,10 +22,14 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <time.h>
 
+#include "Enclave_u.h"
+#include "sgx_urts.h"
+#include "sgx_utils/sgx_utils.h"
 #include "conio.h"
 #include "snake.h"
 
@@ -35,8 +39,48 @@
 #define DBG(fmt, args...)
 #endif
 
-/* Default 0.2 sec between snake movement. */
+sgx_enclave_id_t global_eid = 0;
+
 unsigned int usec_delay = DEFAULT_DELAY;
+
+void ocall_printf(const char* str) {
+   printf("%s\n", str);
+}
+
+void ocall_print_char(char character) {
+   printf("%c\n", character);
+}
+
+void ocall_print_int(const char* text, int num) {
+   printf(text, num);
+}
+
+void ocall_print_str(const char* text, const char* val) {
+  printf(text, val);
+}
+void ocall_clrscr(const char* str) {
+   puts(str);
+}
+
+void ocall_gotoxy(int x, int y) {
+   printf("\e[%d;%dH", y, x);
+}
+
+void ocall_textattr(int attr) {
+   textattr(attr);
+}
+
+void ocall_textcolor(int color) {
+   textcolor(color);
+}
+
+void ocall_textbackground(int color) {
+   textbackground(color);
+}
+
+int ocall_rand() {
+   return rand();
+}
 
 int sigsetup (int signo, void (*callback)(int))
 {
@@ -85,26 +129,7 @@ void alarm_handler (int signal __attribute__ ((unused)))
    setitimer (ITIMER_REAL, &val, NULL);
 }
 
-void show_score (screen_t *screen)
-{
-   textcolor (LIGHTCYAN);
-   gotoxy (3, MAXROW + 2);
-   printf ("Level: %05d", screen->level);
-
-   textcolor (YELLOW);
-   gotoxy (21, MAXROW + 2);
-   printf ("Gold Left: %05d", screen->gold);
-
-   textcolor (LIGHTGREEN);
-   gotoxy (43, MAXROW + 2);
-   printf ("Score: %05d", screen->score);
-
-   textcolor (LIGHTMAGENTA);
-   gotoxy (61, MAXROW + 2);
-   printf ("High Score: %05d", screen->high_score);
-}
-
-void draw_line (int col, int row)
+void ocall_draw_line (int col, int row)
 {
    int i;
 
@@ -121,115 +146,6 @@ void draw_line (int col, int row)
    }
 
    textattr (RESETATTR);
-}
-
-/* If level==0 then just move on to the next level
- * if level==1 restart game
- * Otherwise start game at that level. */
-void setup_level (screen_t *screen, snake_t *snake, int level)
-{
-   int i, row, col;
-
-   srand ((unsigned int)time (NULL));
-
-   /* Initialize on (re)start */
-   if (1 == level)
-   {
-      screen->score = 0;
-      screen->obstacles = 4;
-      screen->level = 1;
-      snake->speed = 14;
-      snake->dir = RIGHT;
-   }
-   else
-   {
-      screen->score += screen->level * 1000;
-      screen->obstacles += 2;
-      screen->level++;          /* add to obstacles */
-
-      if ((screen->level % 5 == 0) && (snake->speed > 1))
-      {
-         snake->speed--;        /* increase snake->speed every 5 levels */
-      }
-   }
-
-   /* Set up global variables for new level */
-   screen->gold = 0;
-   snake->len = level + 4;
-   usec_delay = DEFAULT_DELAY - level * 10000;
-
-   /* Fill grid with blanks */
-   for (row = 0; row < MAXROW; row++)
-   {
-      for (col = 0; col < MAXCOL; col++)
-      {
-         screen->grid[row][col] = ' ';
-      }
-   }
-
-   /* Fill grid with objects */
-   for (i = 0; i < screen->obstacles * 2; i++)
-   {
-      /* Find free space to place an object on. */
-      do
-      {
-         row = rand () % MAXROW;
-         col = rand () % MAXCOL;
-      }
-      while (screen->grid[row][col] != ' ');
-
-      if (i < screen->obstacles)
-      {
-         screen->grid[row][col] = CACTUS;
-      }
-      else
-      {
-         screen->gold++;
-         screen->grid[row][col] = GOLD;
-      }
-   }
-
-   /* Create snake array of length snake->len */
-   for (i = 0; i < snake->len; i++)
-   {
-      snake->body[i].row = START_ROW;
-      snake->body[i].col = snake->dir == LEFT ? START_COL - i : START_COL + i;
-   }
-
-   /* Draw playing board */
-   clrscr();
-   draw_line (1, 1);
-
-   for (row = 0; row < MAXROW; row++)
-   {
-      gotoxy (1, row + 2);
-
-      textcolor (LIGHTBLUE);
-      textbackground (LIGHTBLUE);
-      printf ("|");
-      textattr (RESETATTR);
-
-      textcolor (WHITE);
-      for (col = 0; col < MAXCOL; col++)
-      {
-         printf ("%c", screen->grid[row][col]);
-      }
-
-      textcolor (LIGHTBLUE);
-      textbackground (LIGHTBLUE);
-      printf ("|");
-      textattr (RESETATTR);
-   }
-
-   draw_line (1, MAXROW + 2);
-
-   show_score (screen);
-
-   textcolor (LIGHTRED);
-   //gotoxy (3, 1);
-   //printf ("h:Help");
-   gotoxy (30, 1);
-   printf ("[ Micro Snake v%s ]", VERSION);
 }
 
 void move (snake_t *snake, char keys[], char key)
@@ -427,8 +343,24 @@ int eat_gold (snake_t *snake, screen_t *screen)
    return screen->gold;
 }
 
+void output(sgx_status_t status) {
+   std::cout << "Status " << status << std::endl;
+   if (status != SGX_SUCCESS) {
+      std::cout << "unsuccessful" << std::endl;
+   }
+}
+
+
 int main (void)
 {
+   
+   srand(time(NULL));
+
+   if (initialize_enclave(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
+      std::cout << "Fail to initialize enclave." << std::endl;
+      return 1;
+   }
+
    char keypress;
    snake_t snake;
    screen_t screen;
@@ -450,8 +382,9 @@ int main (void)
 
    do
    {
-      setup_level (&screen, &snake, 1);
-
+      sgx_status_t status = setup_level (global_eid, &screen, &snake, 1);
+      output(status);    
+ 
       do
       {
          keypress = (char)getchar ();
@@ -473,15 +406,18 @@ int main (void)
             if (!eat_gold (&snake, &screen))
             {
                /* ... then go to next level. */
-               setup_level (&screen, &snake, 0);
+               status = setup_level (global_eid, &screen, &snake, 0);
+               output(status);
             }
 
-            show_score (&screen);
+            status = show_score (global_eid, &screen);
+            output(status);
          }
       }
       while (keypress != keys[QUIT]);
 
-      show_score (&screen);
+      status = show_score (global_eid, &screen);
+      output(status);
 
       gotoxy (32, 6);
       textcolor (LIGHTRED);

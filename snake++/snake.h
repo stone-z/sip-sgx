@@ -39,7 +39,8 @@ typedef enum { LEFT=0, RIGHT, UP, DOWN, LEFT_TURN, RIGHT_TURN, QUIT, NUM_KEYS } 
 
 typedef struct
 {
-   int row, col;
+   int row;
+   int col;
 } snake_segment_t;
 
 typedef struct
