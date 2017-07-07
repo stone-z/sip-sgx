@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <stdarg.h>
 
 #include "Enclave_u.h"
 #include "sgx_urts.h"
@@ -44,43 +45,20 @@ sgx_enclave_id_t global_eid = 0;
 unsigned int usec_delay = DEFAULT_DELAY;
 
 void ocall_printf(const char* str) {
-   printf("%s\n", str);
+   printf("%s", str);
 }
 
-void ocall_print_char(char character) {
-   printf("%c\n", character);
-}
-
-void ocall_print_int(const char* text, int num) {
-   printf(text, num);
-}
-
-void ocall_print_str(const char* text, const char* val) {
-  printf(text, val);
-}
 void ocall_clrscr(const char* str) {
    puts(str);
 }
 
-void ocall_gotoxy(int x, int y) {
-   printf("\e[%d;%dH", y, x);
+void ocall_DBG(const char* str, char object) {
+   DBG(str, object);
 }
 
-void ocall_textattr(int attr) {
-   textattr(attr);
-}
-
-void ocall_textcolor(int color) {
-   textcolor(color);
-}
-
-void ocall_textbackground(int color) {
-   textbackground(color);
-}
-
-int ocall_rand() {
-   return rand();
-}
+//int ocall_getchar() {
+//   return getchar();
+//}
 
 int sigsetup (int signo, void (*callback)(int))
 {
@@ -147,6 +125,7 @@ void ocall_draw_line (int col, int row)
 
    textattr (RESETATTR);
 }
+
 
 void move (snake_t *snake, char keys[], char key)
 {
@@ -270,7 +249,12 @@ void move (snake_t *snake, char keys[], char key)
 #endif
 }
 
-int collide_walls (snake_t *snake)
+//void ocall_move(snake_t* snake, char key) {
+//   char keys[NUM_KEYS] = DEFAULT_KEYS;
+//   move(snake, keys, key);
+//}
+
+int ocall_collide_walls (snake_t *snake)
 {
    snake_segment_t *head = &snake->body[snake->len - 1];
 
@@ -284,20 +268,8 @@ int collide_walls (snake_t *snake)
    return 0;
 }
 
-int collide_object (snake_t *snake, screen_t *screen, char object)
-{
-   snake_segment_t *head = &snake->body[snake->len - 1];
 
-   if (screen->grid[head->row - 1][head->col - 1] == object)
-   {
-      DBG("Object '%c' collision.\n", object);
-      return 1;
-   }
-
-   return 0;
-}
-
-int collide_self (snake_t *snake)
+int ocall_collide_self (snake_t *snake)
 {
    int i;
    snake_segment_t *head = &snake->body[snake->len - 1];
@@ -316,37 +288,11 @@ int collide_self (snake_t *snake)
    return 0;
 }
 
-int collision (snake_t *snake, screen_t *screen)
-{
-   return collide_walls (snake) ||
-      collide_object (snake, screen, CACTUS) ||
-      collide_self (snake);
-}
-
-int eat_gold (snake_t *snake, screen_t *screen)
-{
-   snake_segment_t *head = &snake->body[snake->len - 1];
-
-   /* We're called after collide_object() so we know it's
-    * a piece of gold at this position.  Eat it up! */
-   screen->grid[head->row - 1][head->col - 1] = ' ';
-
-   screen->gold--;
-   screen->score += snake->len * screen->obstacles;
-   snake->len++;
-
-   if (screen->score > screen->high_score)
-   {
-      screen->high_score = screen->score; /* New high score! */
-   }
-
-   return screen->gold;
-}
 
 void output(sgx_status_t status) {
-   std::cout << "Status " << status << std::endl;
    if (status != SGX_SUCCESS) {
       std::cout << "unsuccessful" << std::endl;
+      exit(1);
    }
 }
 
@@ -354,8 +300,6 @@ void output(sgx_status_t status) {
 int main (void)
 {
    
-   srand(time(NULL));
-
    if (initialize_enclave(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
       std::cout << "Fail to initialize enclave." << std::endl;
       return 1;
@@ -380,30 +324,43 @@ int main (void)
    sigsetup (SIGHUP, sig_handler);
    sigsetup (SIGTERM, sig_handler);
 
+   //do_game(global_eid);
+
    do
    {
-      sgx_status_t status = setup_level (global_eid, &screen, &snake, 1);
-      output(status);    
- 
+       sgx_status_t status = setup_level (global_eid, &screen, &snake, 1);
+       output(status);    
+       
       do
       {
          keypress = (char)getchar ();
 
          /* Move the snake one position. */
-         move (&snake, keys, keypress);
+        move (&snake, keys, keypress);
 
          /* keeps cursor flashing in one place instead of following snake */
          gotoxy (1, 1);
+         
+         int col_ret;
+         status = collision(global_eid, &col_ret, &snake, &screen);
+         output(status);
 
-         if (collision (&snake, &screen))
+         int col_obj_ret;
+         status = collide_object(global_eid, &col_obj_ret, &snake, &screen, GOLD);
+         output(status);
+
+         if (col_ret)
          {
             keypress = keys[QUIT];
             break;
          }
-         else if (collide_object (&snake, &screen, GOLD))
+         else if (col_obj_ret)
          {
+            int gold_ret;
+            status = eat_gold(global_eid, &gold_ret, &snake, &screen);
+            output(status);
             /* If no gold left after consuming this one... */
-            if (!eat_gold (&snake, &screen))
+           if (!gold_ret)
             {
                /* ... then go to next level. */
                status = setup_level (global_eid, &screen, &snake, 0);
@@ -434,7 +391,6 @@ int main (void)
       while ((keypress != 'y') && (keypress != 'n'));
    }
    while (keypress == 'y');
-
    clrscr ();
 
    int status2 = system ("stty sane");

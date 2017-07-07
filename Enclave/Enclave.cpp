@@ -5,6 +5,63 @@
 /* Default 0.2 sec between snake movement. */
 unsigned int usec_delay = DEFAULT_DELAY;
 
+void printf(const char* fmt, ...) {
+   char buf[BUFSIZ] = {'\0'};
+   va_list ap;
+   va_start(ap, fmt);
+   vsnprintf(buf, BUFSIZ, fmt, ap);
+   va_end(ap);
+   ocall_printf(buf);
+}
+
+int collide_object (snake_t *snake, screen_t *screen, char object)
+{
+   snake_segment_t *head = &snake->body[snake->len - 1];
+
+   if (screen->grid[head->row - 1][head->col - 1] == object)
+   {
+      ocall_DBG("Object '%c' collision.\n", object);
+      return 1;
+   }
+
+   return 0;
+}
+
+int collision (snake_t *snake, screen_t *screen)
+{
+   int col_wal_ret;
+   ocall_collide_walls(&col_wal_ret, snake);
+
+   int col_self_ret;
+   ocall_collide_self(&col_self_ret, snake);
+
+   return col_wal_ret ||
+      collide_object (snake, screen, CACTUS) ||
+      col_self_ret;
+}
+
+int eat_gold (snake_t *snake, screen_t *screen)
+{
+   snake_segment_t *head = &snake->body[snake->len - 1];
+
+   /* We're called after collide_object() so we know it's
+    * a piece of gold at this position.  Eat it up! */
+   screen->grid[head->row - 1][head->col - 1] = ' ';
+
+   screen->gold--;
+   screen->score += snake->len * screen->obstacles;
+   snake->len++;
+
+   if (screen->score > screen->high_score)
+   {
+      screen->high_score = screen->score; /* New high score! */
+   }
+
+   return screen->gold;
+}
+
+
+
 /* If level==0 then just move on to the next level
  * if level==1 restart game
  * Otherwise start game at that level. */
@@ -53,20 +110,14 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
    for (i = 0; i < screen->obstacles * 2; i++)
    {
       /* Find free space to place an object on. */
-      do
+    do
       {
-         //unsigned char row_buf[4];
-         //unsigned char col_buf[4];
-         //sgx_read_rand(row_buf, 4);
-         //sgx_read_rand(col_buf, 4);
-         //row = *((int*)row_buf) % MAXROW;
-         //col = *((int*)col_buf) % MAXCOL;
-         int* row_buf = new int[1]; 
-         int* col_buf = new int[1];
-         ocall_rand(row_buf);
-         row  = *row_buf % MAXROW;
-         ocall_rand(col_buf);
-         col = *col_buf % MAXCOL;
+         unsigned char row_buf[4];
+         unsigned char col_buf[4];
+         sgx_read_rand(row_buf, 4);
+         sgx_read_rand(col_buf, 4);
+         row = *((int*)row_buf) % MAXROW;
+         col = *((int*)col_buf) % MAXCOL;
       }
       while (screen->grid[row][col] != ' ');
 
@@ -96,54 +147,116 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
 
    for (row = 0; row < MAXROW; row++)
    {
-      ocall_gotoxy(1, row + 2);
+      gotoxy(1, row + 2);
 
-      ocall_textcolor (LIGHTBLUE);
-      ocall_textbackground (LIGHTBLUE);
-      ocall_printf ("|");
-      ocall_textattr (RESETATTR);
+      textcolor (LIGHTBLUE);
+      textbackground (LIGHTBLUE);
+      printf ("|");
+      textattr (RESETATTR);
 
-      ocall_textcolor (WHITE);
+      textcolor (WHITE);
       for (col = 0; col < MAXCOL; col++)
       {
-         ocall_print_char(screen->grid[row][col]);
+         printf("%c", screen->grid[row][col]);
       }
 
-      ocall_textcolor (LIGHTBLUE);
-      ocall_textbackground (LIGHTBLUE);
-      ocall_printf ("|");
-      ocall_textattr (RESETATTR);
+      textcolor (LIGHTBLUE);
+      textbackground (LIGHTBLUE);
+      printf ("|");
+      textattr (RESETATTR);
    }
 
    ocall_draw_line (1, MAXROW + 2);
 
    show_score (screen);
 
-   ocall_textcolor (LIGHTRED);
-   //gotoxy (3, 1);
-   //printf ("h:Help");
-   ocall_gotoxy (30, 1);
-   ocall_print_str ("[ Micro Snake v%s ]", VERSION);
+   textcolor (LIGHTRED);
+   gotoxy (30, 1);
+   printf("[ Micro Snake v%s ]", VERSION);
 }
 
 void show_score (screen_t *screen)
 {
-   ocall_textcolor (LIGHTCYAN);
-   ocall_gotoxy (3, MAXROW + 2);
-   ocall_print_int ("Level: %05d", screen->level);
+   textcolor (LIGHTCYAN);
+   gotoxy (3, MAXROW + 2);
+   printf("Level: %05d", screen->level);
 
-   ocall_textcolor (YELLOW);
-   ocall_gotoxy (21, MAXROW + 2);
-   ocall_print_int ("Gold Left: %05d", screen->gold);
+   textcolor (YELLOW);
+   gotoxy (21, MAXROW + 2);
+   printf("Gold Left: %05d", screen->gold);
 
-   ocall_textcolor (LIGHTGREEN);
-   ocall_gotoxy (43, MAXROW + 2);
-   ocall_print_int ("Score: %05d", screen->score);
+   textcolor (LIGHTGREEN);
+   gotoxy (43, MAXROW + 2);
+   printf("Score: %05d", screen->score);
 
-   ocall_textcolor (LIGHTMAGENTA);
-   ocall_gotoxy (61, MAXROW + 2);
-   ocall_print_int ("High Score: %05d", screen->high_score);
+   textcolor (LIGHTMAGENTA);
+   gotoxy (61, MAXROW + 2);
+   printf("High Score: %05d", screen->high_score);
 }
 
 
+/*void do_game()
+{
+   char keypress;
+   snake_t snake;
+   screen_t screen;
+   char keys[NUM_KEYS] = DEFAULT_KEYS;
 
+   do
+   {
+      setup_level (&screen, &snake, 1);
+      do
+      {
+         int res;
+         ocall_getchar(&res);
+         keypress = (char)res;
+
+        // keypress = (char)getchar ();
+
+         /* Move the snake one position. */
+        /*ocall_move (&snake, keypress);
+
+         /* keeps cursor flashing in one place instead of following snake */
+         /*gotoxy (1, 1);
+
+         if (collision (&snake, &screen))
+         {
+            keypress = keys[QUIT];
+            break;
+         }
+         else if (collide_object (&snake, &screen, GOLD))
+         {
+            /* If no gold left after consuming this one... */
+        /*if (!eat_gold (&snake, &screen))
+            {
+               /* ... then go to next level. */
+        /* setup_level (&screen, &snake, 0);
+            }
+
+            show_score (&screen);
+         }
+      }
+      while (keypress != keys[QUIT]);
+
+      show_score (&screen);
+
+      gotoxy (32, 6);
+      textcolor (LIGHTRED);
+      printf ("-G A M E  O V E R-");
+
+      gotoxy (32, 9);
+      textcolor (YELLOW);
+      printf ("Another Game (y/n)? ");
+
+      do
+      {
+         int res;
+         //keypress = getchar ();
+         ocall_getchar(&res);
+         keypress = (char)res; 
+      }
+      while ((keypress != 'y') && (keypress != 'n'));
+   }
+   while (keypress == 'y');
+
+}*/
