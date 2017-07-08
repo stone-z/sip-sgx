@@ -8,7 +8,7 @@ enclave {
       public int collision([in, out] snake_t *snake, [in, out] screen_t *screen);
       public int collide_object([in, out] snake_t* snake, [in, out] screen_t* screen, char object);
       public int eat_gold([in, out] snake_t* snake, [in, out] screen_t* screen);
-      //public void do_game();
+      public void do_game();
    };
 
    untrusted {
@@ -18,7 +18,7 @@ enclave {
       void ocall_DBG([in, string] const char* string, char object);
       int ocall_collide_walls([in] snake_t* snake);
       int ocall_collide_self([in] snake_t* snake);
-      //void ocall_move([in, out] snake_t* snake, char key);
-      //int ocall_getchar();
+      void ocall_move([in, out] snake_t* snake, char key);
+      int ocall_getchar();
    };
 };
