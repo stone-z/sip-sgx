@@ -56,9 +56,9 @@ void ocall_DBG(const char* str, char object) {
    DBG(str, object);
 }
 
-//int ocall_getchar() {
-//   return getchar();
-//}
+int ocall_getchar() {
+   return getchar();
+}
 
 int sigsetup (int signo, void (*callback)(int))
 {
@@ -249,10 +249,10 @@ void move (snake_t *snake, char keys[], char key)
 #endif
 }
 
-//void ocall_move(snake_t* snake, char key) {
-//   char keys[NUM_KEYS] = DEFAULT_KEYS;
-//   move(snake, keys, key);
-//}
+void ocall_move(snake_t* snake, char key) {
+   char keys[NUM_KEYS] = DEFAULT_KEYS;
+   move(snake, keys, key);
+}
 
 int ocall_collide_walls (snake_t *snake)
 {
@@ -324,8 +324,8 @@ int main (void)
    sigsetup (SIGHUP, sig_handler);
    sigsetup (SIGTERM, sig_handler);
 
-   //do_game(global_eid);
-
+   do_game(global_eid);
+   /*
    do
    {
        sgx_status_t status = setup_level (global_eid, &screen, &snake, 1);
@@ -335,10 +335,10 @@ int main (void)
       {
          keypress = (char)getchar ();
 
-         /* Move the snake one position. */
+        //  Move the snake one position. 
         move (&snake, keys, keypress);
 
-         /* keeps cursor flashing in one place instead of following snake */
+         // keeps cursor flashing in one place instead of following snake 
          gotoxy (1, 1);
          
          int col_ret;
@@ -359,10 +359,10 @@ int main (void)
             int gold_ret;
             status = eat_gold(global_eid, &gold_ret, &snake, &screen);
             output(status);
-            /* If no gold left after consuming this one... */
+           // /* If no gold left after consuming this one... 
            if (!gold_ret)
             {
-               /* ... then go to next level. */
+               // /* ... then go to next level. 
                status = setup_level (global_eid, &screen, &snake, 0);
                output(status);
             }
@@ -391,6 +391,7 @@ int main (void)
       while ((keypress != 'y') && (keypress != 'n'));
    }
    while (keypress == 'y');
+   */
    clrscr ();
 
    int status2 = system ("stty sane");

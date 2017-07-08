@@ -195,7 +195,7 @@ void show_score (screen_t *screen)
 }
 
 
-/*void do_game()
+void do_game()
 {
    char keypress;
    snake_t snake;
@@ -214,10 +214,10 @@ void show_score (screen_t *screen)
         // keypress = (char)getchar ();
 
          /* Move the snake one position. */
-        /*ocall_move (&snake, keypress);
+         ocall_move (&snake, keypress);
 
          /* keeps cursor flashing in one place instead of following snake */
-         /*gotoxy (1, 1);
+         gotoxy (1, 1);
 
          if (collision (&snake, &screen))
          {
@@ -227,10 +227,10 @@ void show_score (screen_t *screen)
          else if (collide_object (&snake, &screen, GOLD))
          {
             /* If no gold left after consuming this one... */
-        /*if (!eat_gold (&snake, &screen))
+         if (!eat_gold (&snake, &screen))
             {
                /* ... then go to next level. */
-        /* setup_level (&screen, &snake, 0);
+         setup_level (&screen, &snake, 0);
             }
 
             show_score (&screen);
@@ -259,4 +259,4 @@ void show_score (screen_t *screen)
    }
    while (keypress == 'y');
 
-}*/
+}
