@@ -30,6 +30,7 @@ typedef struct ms_eat_gold_t {
 	screen_t* ms_screen;
 } ms_eat_gold_t;
 
+
 typedef struct ms_ocall_printf_t {
 	char* ms_str;
 } ms_ocall_printf_t;
@@ -57,6 +58,19 @@ typedef struct ms_ocall_collide_self_t {
 	int ms_retval;
 	snake_t* ms_snake;
 } ms_ocall_collide_self_t;
+
+typedef struct ms_ocall_move_t {
+	snake_t* ms_snake;
+	char ms_key;
+} ms_ocall_move_t;
+
+typedef struct ms_ocall_getchar_t {
+	int ms_retval;
+} ms_ocall_getchar_t;
+
+typedef struct ms_GetTimeInMillis_t {
+	uint64 ms_retval;
+} ms_GetTimeInMillis_t;
 
 static sgx_status_t SGX_CDECL Enclave_ocall_printf(void* pms)
 {
@@ -106,11 +120,35 @@ static sgx_status_t SGX_CDECL Enclave_ocall_collide_self(void* pms)
 	return SGX_SUCCESS;
 }
 
+static sgx_status_t SGX_CDECL Enclave_ocall_move(void* pms)
+{
+	ms_ocall_move_t* ms = SGX_CAST(ms_ocall_move_t*, pms);
+	ocall_move(ms->ms_snake, ms->ms_key);
+
+	return SGX_SUCCESS;
+}
+
+static sgx_status_t SGX_CDECL Enclave_ocall_getchar(void* pms)
+{
+	ms_ocall_getchar_t* ms = SGX_CAST(ms_ocall_getchar_t*, pms);
+	ms->ms_retval = ocall_getchar();
+
+	return SGX_SUCCESS;
+}
+
+static sgx_status_t SGX_CDECL Enclave_GetTimeInMillis(void* pms)
+{
+	ms_GetTimeInMillis_t* ms = SGX_CAST(ms_GetTimeInMillis_t*, pms);
+	ms->ms_retval = GetTimeInMillis();
+
+	return SGX_SUCCESS;
+}
+
 static const struct {
 	size_t nr_ocall;
-	void * table[6];
+	void * table[9];
 } ocall_table_Enclave = {
-	6,
+	9,
 	{
 		(void*)Enclave_ocall_printf,
 		(void*)Enclave_ocall_clrscr,
@@ -118,6 +156,9 @@ static const struct {
 		(void*)Enclave_ocall_DBG,
 		(void*)Enclave_ocall_collide_walls,
 		(void*)Enclave_ocall_collide_self,
+		(void*)Enclave_ocall_move,
+		(void*)Enclave_ocall_getchar,
+		(void*)Enclave_GetTimeInMillis,
 	}
 };
 sgx_status_t setup_level(sgx_enclave_id_t eid, screen_t* screen, snake_t* snake, int level)
@@ -171,6 +212,13 @@ sgx_status_t eat_gold(sgx_enclave_id_t eid, int* retval, snake_t* snake, screen_
 	ms.ms_screen = screen;
 	status = sgx_ecall(eid, 4, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
+	return status;
+}
+
+sgx_status_t do_game(sgx_enclave_id_t eid)
+{
+	sgx_status_t status;
+	status = sgx_ecall(eid, 5, &ocall_table_Enclave, NULL);
 	return status;
 }
 

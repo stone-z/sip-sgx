@@ -319,12 +319,7 @@ int main (void)
       return 1;
    }
 
-	uint64 t1 = GetTimeInMillis();
-
-   char keypress;
-   snake_t snake;
-   screen_t screen;
-   char keys[NUM_KEYS] = DEFAULT_KEYS;
+   uint64 t1 = GetTimeInMillis();
 
    int status = system ("stty cbreak -echo stop u");
    if(WEXITSTATUS(status))
@@ -339,16 +334,16 @@ int main (void)
    sigsetup (SIGINT, sig_handler);
    sigsetup (SIGHUP, sig_handler);
    sigsetup (SIGTERM, sig_handler);
-
-	// uint64 t2 = GetTimeInMillis();
-	// uint64 d = t2 - t1;
-	// printf("TDiff: %i", d);
+    
+   // uint64 t2 = GetTimeInMillis();
+   // uint64 d = t2 - t1;
+   // printf("TDiff: %i", d);
 
    do_game(global_eid);
 
-        uint64 t2 = GetTimeInMillis();
-        uint64 d = t2 - t1;
-        //printf("TDiff: %i", d);
+   uint64 t2 = GetTimeInMillis();
+   uint64 d = t2 - t1;
+   //printf("TDiff: %i", d);
    clrscr ();
 
    int status2 = system ("stty sane");

@@ -69,8 +69,6 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
 {
    int i, row, col;
 
-   //srand ((unsigned int)time (NULL));
-
    /* Initialize on (re)start */
    if (1 == level)
    {
@@ -202,7 +200,7 @@ void do_game()
    char keypress;
    snake_t snake;
    screen_t screen;
-	screen.high_score = 0;
+   screen.high_score = 0;
    char keys[NUM_KEYS] = DEFAULT_KEYS;
 
    do
@@ -229,10 +227,10 @@ void do_game()
          {
             /* If no gold left after consuming this one... */
          if (!eat_gold (&snake, &screen))
-            {
-               /* ... then go to next level. */
-         setup_level (&screen, &snake, 0);
-            }
+         {
+            /* ... then go to next level. */
+            setup_level (&screen, &snake, 0);
+         }
 
             show_score (&screen);
          }

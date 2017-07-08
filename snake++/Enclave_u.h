@@ -24,12 +24,16 @@ void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_draw_line, (int col, int row));
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_DBG, (const char* string, char object));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_collide_walls, (snake_t* snake));
 int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_collide_self, (snake_t* snake));
+void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_move, (snake_t* snake, char key));
+int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_getchar, ());
+uint64 SGX_UBRIDGE(SGX_NOCONVENTION, GetTimeInMillis, ());
 
 sgx_status_t setup_level(sgx_enclave_id_t eid, screen_t* screen, snake_t* snake, int level);
 sgx_status_t show_score(sgx_enclave_id_t eid, screen_t* screen);
 sgx_status_t collision(sgx_enclave_id_t eid, int* retval, snake_t* snake, screen_t* screen);
 sgx_status_t collide_object(sgx_enclave_id_t eid, int* retval, snake_t* snake, screen_t* screen, char object);
 sgx_status_t eat_gold(sgx_enclave_id_t eid, int* retval, snake_t* snake, screen_t* screen);
+sgx_status_t do_game(sgx_enclave_id_t eid);
 
 #ifdef __cplusplus
 }
