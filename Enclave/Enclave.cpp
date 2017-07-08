@@ -83,6 +83,9 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
    else
    {
       screen->score += screen->level * 1000;
+	if (screen->score > screen->high_score){
+		screen->high_score = screen->score;
+	}
       screen->obstacles += 2;
       screen->level++;          /* add to obstacles */
 
@@ -199,6 +202,7 @@ void do_game()
    char keypress;
    snake_t snake;
    screen_t screen;
+	screen.high_score = 0;
    char keys[NUM_KEYS] = DEFAULT_KEYS;
 
    do
