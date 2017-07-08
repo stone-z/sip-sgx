@@ -35,6 +35,7 @@
 #define DEFAULT_DELAY 200000
 #define DEFAULT_KEYS  {'o', 'p', 'a', 'z', 'f', 'j', 'q'}
 
+typedef long long int64; typedef unsigned long long uint64;
 typedef enum { LEFT=0, RIGHT, UP, DOWN, LEFT_TURN, RIGHT_TURN, QUIT, NUM_KEYS } direction_t;
 
 typedef struct

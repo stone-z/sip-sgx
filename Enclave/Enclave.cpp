@@ -140,7 +140,6 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
    }
 
    /* Draw playing board */
-   //clrscr();
    ocall_clrscr("\e[2J\e[1;1H");
 
    ocall_draw_line (1, 1);
@@ -211,8 +210,6 @@ void do_game()
          ocall_getchar(&res);
          keypress = (char)res;
 
-        // keypress = (char)getchar ();
-
          /* Move the snake one position. */
          ocall_move (&snake, keypress);
 
@@ -251,12 +248,10 @@ void do_game()
       do
       {
          int res;
-         //keypress = getchar ();
          ocall_getchar(&res);
          keypress = (char)res; 
       }
       while ((keypress != 'y') && (keypress != 'n'));
    }
    while (keypress == 'y');
-
 }

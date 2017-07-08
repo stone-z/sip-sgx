@@ -40,6 +40,8 @@
 #define DBG(fmt, args...)
 #endif
 
+typedef long long int64; typedef unsigned long long uint64;
+
 sgx_enclave_id_t global_eid = 0;
 
 unsigned int usec_delay = DEFAULT_DELAY;
@@ -296,14 +298,28 @@ void output(sgx_status_t status) {
    }
 }
 
+uint64 GetTimeInMillis(){
+	// From https://stackoverflow.com/a/1861337
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	uint64 ret = tv.tv_usec;
+	ret /= 1000;
+
+	ret += (tv.tv_sec * 1000);
+
+	return ret;
+}
 
 int main (void)
 {
-   
    if (initialize_enclave(&global_eid, "enclave.token", "enclave.signed.so") < 0) {
       std::cout << "Fail to initialize enclave." << std::endl;
       return 1;
    }
+
+	uint64 t1 = GetTimeInMillis();
 
    char keypress;
    snake_t snake;
@@ -324,84 +340,17 @@ int main (void)
    sigsetup (SIGHUP, sig_handler);
    sigsetup (SIGTERM, sig_handler);
 
+	// uint64 t2 = GetTimeInMillis();
+	// uint64 d = t2 - t1;
+	// printf("TDiff: %i", d);
+
    do_game(global_eid);
-   /*
-   do
-   {
-       sgx_status_t status = setup_level (global_eid, &screen, &snake, 1);
-       output(status);    
-       
-      do
-      {
-         keypress = (char)getchar ();
 
-        //  Move the snake one position. 
-        move (&snake, keys, keypress);
-
-         // keeps cursor flashing in one place instead of following snake 
-         gotoxy (1, 1);
-         
-         int col_ret;
-         status = collision(global_eid, &col_ret, &snake, &screen);
-         output(status);
-
-         int col_obj_ret;
-         status = collide_object(global_eid, &col_obj_ret, &snake, &screen, GOLD);
-         output(status);
-
-         if (col_ret)
-         {
-            keypress = keys[QUIT];
-            break;
-         }
-         else if (col_obj_ret)
-         {
-            int gold_ret;
-            status = eat_gold(global_eid, &gold_ret, &snake, &screen);
-            output(status);
-           // /* If no gold left after consuming this one... 
-           if (!gold_ret)
-            {
-               // /* ... then go to next level. 
-               status = setup_level (global_eid, &screen, &snake, 0);
-               output(status);
-            }
-
-            status = show_score (global_eid, &screen);
-            output(status);
-         }
-      }
-      while (keypress != keys[QUIT]);
-
-      status = show_score (global_eid, &screen);
-      output(status);
-
-      gotoxy (32, 6);
-      textcolor (LIGHTRED);
-      printf ("-G A M E  O V E R-");
-
-      gotoxy (32, 9);
-      textcolor (YELLOW);
-      printf ("Another Game (y/n)? ");
-
-      do
-      {
-         keypress = getchar ();
-      }
-      while ((keypress != 'y') && (keypress != 'n'));
-   }
-   while (keypress == 'y');
-   */
+        uint64 t2 = GetTimeInMillis();
+        uint64 d = t2 - t1;
+        //printf("TDiff: %i", d);
    clrscr ();
 
    int status2 = system ("stty sane");
    return WEXITSTATUS(status2);
 }
-
-
-/**
- * Local Variables:
- *  version-control: t
- *  c-file-style: "ellemtel"
- * End:
- */

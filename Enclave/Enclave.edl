@@ -20,5 +20,6 @@ enclave {
       int ocall_collide_self([in] snake_t* snake);
       void ocall_move([in, out] snake_t* snake, char key);
       int ocall_getchar();
+	uint64 GetTimeInMillis();
    };
 };
