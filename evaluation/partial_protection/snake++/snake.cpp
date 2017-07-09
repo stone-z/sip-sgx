@@ -361,11 +361,10 @@ int main (void)
 
    do
    {
-      setup_level (&global_eid, &screen, &snake, 1);
+      setup_level (global_eid, &screen, &snake, 1);
       do
       {
-         int res;
-         ocall_getchar(&res);
+         int res = ocall_getchar();
          keypress = (char)res;
 
          /* Move the snake one position. */
@@ -373,27 +372,34 @@ int main (void)
 
          /* keeps cursor flashing in one place instead of following snake */
          gotoxy (1, 1);
+	int col;
+	collision(global_eid, &col, &snake, &screen);
 
-         if (collision (&global_eid, &snake, &screen))
+	int colobj;
+	collide_object(global_eid, &colobj, &snake, &screen, GOLD);
+
+         if (col)
          {
             keypress = keys[QUIT];
             break;
          }
-         else if (collide_object (&global_eid,  &snake, &screen, GOLD))
+         else if (colobj)
          {
             /* If no gold left after consuming this one... */
-         if (!eat_gold (&global_eid, &snake, &screen))
+	int gold;
+	eat_gold(global_eid, &gold, &snake, &screen);
+         if (!gold)
          {
             /* ... then go to next level. */
-            setup_level (&global_eid, &screen, &snake, 0);
+            setup_level (global_eid, &screen, &snake, 0);
          }
 
-            show_score (&global_eid, &screen);
+            show_score (global_eid, &screen);
          }
       }
       while (keypress != keys[QUIT]);
 
-      show_score (&global_eid, &screen);
+      show_score (global_eid, &screen);
 
       gotoxy (32, 6);
       textcolor (LIGHTRED);
@@ -405,8 +411,7 @@ int main (void)
 
       do
       {
-         int res;
-         ocall_getchar(&res);
+         int res = ocall_getchar();
          keypress = (char)res; 
       }
       while ((keypress != 'y') && (keypress != 'n'));
