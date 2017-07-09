@@ -420,6 +420,13 @@ int main (void)
 
    clrscr ();
 
+	printf("\n");
+	printf("Setup Average: %llu\n", (setup_sum/setup_count));
+	printf("ShowScore Average: %llu\n", (showscore_sum/showscore_count));
+	printf("Collision Average: %llu\n", (collision_sum/collision_count));
+	printf("EatGold Average: %llu\n", (eat_sum/eat_count));
+	printf("CollideObject Average: %llu\n", (cobj_sum/cobj_count));
+
    int status2 = system ("stty sane");
    return WEXITSTATUS(status2);
 }
