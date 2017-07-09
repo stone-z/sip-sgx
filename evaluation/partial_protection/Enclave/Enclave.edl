@@ -1,0 +1,25 @@
+enclave {
+   include "snake.h"
+   include "conio.h"
+  
+   trusted {
+      public void setup_level ([in, out] screen_t *screen,[in, out] snake_t *snake, int level);
+      public void show_score ([in, out] screen_t *screen);
+      public int collision([in, out] snake_t *snake, [in, out] screen_t *screen);
+      public int collide_object([in, out] snake_t* snake, [in, out] screen_t* screen, char object);
+      public int eat_gold([in, out] snake_t* snake, [in, out] screen_t* screen);
+      public void do_game();
+   };
+
+   untrusted {
+      void ocall_printf([in, string] const char* str);
+      void ocall_clrscr([in, string] const char* str);
+      void ocall_draw_line(int col, int row);
+      void ocall_DBG([in, string] const char* string, char object);
+      int ocall_collide_walls([in] snake_t* snake);
+      int ocall_collide_self([in] snake_t* snake);
+      void ocall_move([in, out] snake_t* snake, char key);
+      int ocall_getchar();
+	uint64 GetTimeInMillis();
+   };
+};
