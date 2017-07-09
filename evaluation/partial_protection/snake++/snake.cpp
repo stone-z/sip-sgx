@@ -361,7 +361,7 @@ int main (void)
 
    do
    {
-      setup_level (&screen, &snake, 1);
+      setup_level (&global_eid, &screen, &snake, 1);
       do
       {
          int res;
@@ -374,26 +374,26 @@ int main (void)
          /* keeps cursor flashing in one place instead of following snake */
          gotoxy (1, 1);
 
-         if (collision (&snake, &screen))
+         if (collision (&global_eid, &snake, &screen))
          {
             keypress = keys[QUIT];
             break;
          }
-         else if (collide_object (&snake, &screen, GOLD))
+         else if (collide_object (&global_eid,  &snake, &screen, GOLD))
          {
             /* If no gold left after consuming this one... */
-         if (!eat_gold (&snake, &screen))
+         if (!eat_gold (&global_eid, &snake, &screen))
          {
             /* ... then go to next level. */
-            setup_level (&screen, &snake, 0);
+            setup_level (&global_eid, &screen, &snake, 0);
          }
 
-            show_score (&screen);
+            show_score (&global_eid, &screen);
          }
       }
       while (keypress != keys[QUIT]);
 
-      show_score (&screen);
+      show_score (&global_eid, &screen);
 
       gotoxy (32, 6);
       textcolor (LIGHTRED);
