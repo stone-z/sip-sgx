@@ -361,7 +361,15 @@ int main (void)
 
    do
    {
+
+	struct timeval tv;
+	struct timeval tv2;
+	gettimeofday(&tv, NULL);	
       setup_level (global_eid, &screen, &snake, 1);
+	gettimeofday(&tv2, NULL);	
+	auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
+	setup_sum += d;
+	setup_count++;
       do
       {
          int res = ocall_getchar();
@@ -373,10 +381,27 @@ int main (void)
          /* keeps cursor flashing in one place instead of following snake */
          gotoxy (1, 1);
 	int col;
+
+
+		struct timeval tvc, tvc2;
+		gettimeofday(&tvc, NULL);	
 	collision(global_eid, &col, &snake, &screen);
+		gettimeofday(&tvc2, NULL);	
+		auto dc = ((tvc2.tv_sec - tvc.tv_sec)*1000000L + tvc2.tv_usec) - tvc.tv_usec;
+		collision_sum += dc;
+		collision_count++;
+
+
 
 	int colobj;
+
+		struct timeval tvco, tvco2;
+		gettimeofday(&tvco, NULL);	
 	collide_object(global_eid, &colobj, &snake, &screen, GOLD);
+		gettimeofday(&tvco2, NULL);	
+		auto dco = ((tvco2.tv_sec - tvco.tv_sec)*1000000L + tvco2.tv_usec) - tvco.tv_usec;
+		cobj_sum += dco;
+		cobj_count++;
 
          if (col)
          {
@@ -387,19 +412,50 @@ int main (void)
          {
             /* If no gold left after consuming this one... */
 	int gold;
+
+		struct timeval tveg, tveg2;
+		gettimeofday(&tveg, NULL);	
 	eat_gold(global_eid, &gold, &snake, &screen);
+		gettimeofday(&tveg2, NULL);	
+		auto deg = ((tveg2.tv_sec - tveg.tv_sec)*1000000L + tveg2.tv_usec) - tveg.tv_usec;
+		eat_sum += deg;
+		eat_count++;
          if (!gold)
          {
             /* ... then go to next level. */
+
+		struct timeval tv;
+		struct timeval tv2;
+		gettimeofday(&tv, NULL);	
             setup_level (global_eid, &screen, &snake, 0);
+		gettimeofday(&tv2, NULL);	
+		auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
+		setup_sum += d;
+		setup_count++;
          }
 
+
+		struct timeval tv;
+		struct timeval tv2;
+		gettimeofday(&tv, NULL);	
             show_score (global_eid, &screen);
+		gettimeofday(&tv2, NULL);	
+		auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
+		showscore_sum += d;
+		showscore_count++;
          }
       }
       while (keypress != keys[QUIT]);
 
+
+	struct timeval tvss;
+	struct timeval tvss2;
+	gettimeofday(&tvss, NULL);	
       show_score (global_eid, &screen);
+	gettimeofday(&tvss2, NULL);	
+	auto dss = ((tvss2.tv_sec - tvss.tv_sec)*1000000L + tvss2.tv_usec) - tvss.tv_usec;
+	showscore_sum += dss;
+	showscore_count++;
 
       gotoxy (32, 6);
       textcolor (LIGHTRED);
