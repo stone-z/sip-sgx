@@ -421,6 +421,8 @@ int main (void)
    clrscr ();
 
 	printf("\n");
+	printf("Setup sum: %llu", setup_sum);
+	printf("Setup count: %i", setup_count);
 	printf("Setup Average: %llu\n", (setup_sum/setup_count));
 	printf("ShowScore Average: %llu\n", (showscore_sum/showscore_count));
 	printf("Collision Average: %llu\n", (collision_sum/collision_count));
