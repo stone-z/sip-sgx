@@ -25,9 +25,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <chrono>
-#include <ctime>
-// #include <iostream>
 
 #include "conio.h"
 #include "snake.h"
@@ -40,24 +37,6 @@
 
 /* Default 0.2 sec between snake movement. */
 unsigned int usec_delay = DEFAULT_DELAY;
-
-uint64 setup_sum = 0;
-int setup_count = 0;
-
-uint64 showscore_sum = 0;
-int showscore_count = 0;
-
-uint64 collision_sum = 0;
-int collision_count = 0;
-
-uint64 collide_sum = 0;
-int collide_count = 0;
-
-uint64 cobj_sum = 0;
-int cobj_count = 0;
-
-uint64 eat_sum = 0;
-int eat_count = 0;
 
 int sigsetup (int signo, void (*callback)(int))
 {
@@ -248,15 +227,7 @@ void setup_level (screen_t *screen, snake_t *snake, int level)
 
    draw_line (1, MAXROW + 2);
 
-	struct timeval tv;
-	struct timeval tv2;
-	gettimeofday(&tv, NULL);	
-    	show_score (screen);
-	gettimeofday(&tv2, NULL);	
-	auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
-	showscore_sum += d;
-	showscore_count++;
-
+   show_score (screen);
 
    textcolor (LIGHTRED);
    //gotoxy (3, 1);
@@ -435,21 +406,9 @@ int collide_self (snake_t *snake)
 
 int collision (snake_t *snake, screen_t *screen)
 {
-   	int cw = collide_walls (snake);
-
-	struct timeval tv;
-	struct timeval tv2;
-	gettimeofday(&tv, NULL);	
-	int co = collide_object (snake, screen, CACTUS);
-	gettimeofday(&tv2, NULL);	
-	auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
-	cobj_sum += d;
-	cobj_count++;
-	
-	int cs = collide_self (snake);
-
-	return cw || co || cs;
-      	
+   return collide_walls (snake) ||
+      collide_object (snake, screen, CACTUS) ||
+      collide_self (snake);
 }
 
 int eat_gold (snake_t *snake, screen_t *screen)
@@ -470,20 +429,6 @@ int eat_gold (snake_t *snake, screen_t *screen)
    }
 
    return screen->gold;
-}
-
-uint64 GetTimeInMillis(){
-	// From https://stackoverflow.com/a/1861337
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-
-	uint64 ret = tv.tv_usec;
-	ret /= 1000;
-
-	ret += (tv.tv_sec * 1000);
-
-	return ret;
 }
 
 int main (void)
@@ -510,14 +455,7 @@ int main (void)
 
    do
    {
-	struct timeval tv;
-	struct timeval tv2;
-	gettimeofday(&tv, NULL);	
-	setup_level (&screen, &snake, 1);
-	gettimeofday(&tv2, NULL);	
-	auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
-	setup_sum += d;
-	setup_count++;
+      setup_level (&screen, &snake, 1);
 
       do
       {
@@ -529,73 +467,26 @@ int main (void)
          /* keeps cursor flashing in one place instead of following snake */
          gotoxy (1, 1);
 
-
-		struct timeval tvc, tvc2;
-		gettimeofday(&tvc, NULL);	
-		int c = collision (&snake, &screen);
-		gettimeofday(&tvc2, NULL);	
-		auto dc = ((tvc2.tv_sec - tvc.tv_sec)*1000000L + tvc2.tv_usec) - tvc.tv_usec;
-		collision_sum += dc;
-		collision_count++;
-
-		struct timeval tvco, tvco2;
-		gettimeofday(&tvco, NULL);	
-		int co = collide_object (&snake, &screen, GOLD);
-		gettimeofday(&tvco2, NULL);	
-		auto dco = ((tvco2.tv_sec - tvco.tv_sec)*1000000L + tvco2.tv_usec) - tvco.tv_usec;
-		cobj_sum += dco;
-		cobj_count++;
-
-         if (c)
+         if (collision (&snake, &screen))
          {
             keypress = keys[QUIT];
             break;
          }
-         else if (co)
+         else if (collide_object (&snake, &screen, GOLD))
          {
             /* If no gold left after consuming this one... */
-
-		struct timeval tveg, tveg2;
-		gettimeofday(&tveg, NULL);	
-		int eg = eat_gold (&snake, &screen);
-		gettimeofday(&tveg2, NULL);	
-		auto deg = ((tveg2.tv_sec - tveg.tv_sec)*1000000L + tveg2.tv_usec) - tveg.tv_usec;
-		eat_sum += deg;
-		eat_count++;
-
-            if (!eg)
+            if (!eat_gold (&snake, &screen))
             {
                /* ... then go to next level. */
-		struct timeval tv;
-		struct timeval tv2;
-		gettimeofday(&tv, NULL);	
-		setup_level (&screen, &snake, 0);
-		gettimeofday(&tv2, NULL);	
-		auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
-		setup_sum += d;
-		setup_count++;
+               setup_level (&screen, &snake, 0);
             }
-		struct timeval tv;
-		struct timeval tv2;
-		gettimeofday(&tv, NULL);	
-            	show_score (&screen);
-		gettimeofday(&tv2, NULL);	
-		auto d = ((tv2.tv_sec - tv.tv_sec)*1000000L + tv2.tv_usec) - tv.tv_usec;
-		showscore_sum += d;
-		showscore_count++;
 
+            show_score (&screen);
          }
       }
       while (keypress != keys[QUIT]);
 
-	struct timeval tvss;
-	struct timeval tvss2;
-	gettimeofday(&tvss, NULL);	
-    	show_score (&screen);
-	gettimeofday(&tvss2, NULL);	
-	auto dss = ((tvss2.tv_sec - tvss.tv_sec)*1000000L + tvss2.tv_usec) - tvss.tv_usec;
-	showscore_sum += dss;
-	showscore_count++;
+      show_score (&screen);
 
       gotoxy (32, 6);
       textcolor (LIGHTRED);
@@ -614,19 +505,6 @@ int main (void)
    while (keypress == 'y');
 
    clrscr ();
-
-	printf("\n");
-        printf("Setup Sum: %llu\n", setup_sum);
-        printf("Setup Count: %i\n", setup_count);
-	printf("Setup Average: %llu\n", (setup_sum/setup_count));
-	printf("\n");
-        printf("ShowScore Sum: %llu\n", showscore_sum);
-        printf("ShowScore Count: %i\n", showscore_count);
-	printf("ShowScore Average: %llu\n", (showscore_sum/showscore_count));
-	printf("\n");
-	printf("Collision Average: %llu\n", (collision_sum/collision_count));
-	printf("EatGold Average: %llu\n", (eat_sum/eat_count));
-	printf("CollideObject Average: %llu\n", (cobj_sum/cobj_count));
 
    status = system ("stty sane");
    return WEXITSTATUS(status);
